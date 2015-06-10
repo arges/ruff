@@ -1,32 +1,27 @@
-/*
-  (c) 2015 - Chris J Arges <christopherarges@gmail.com>
-*/
-
-/* this file may be renamed */
+//! Screen - handles screen input and output
+//!
+//! (C) 2015 Chris J Arges <christopherarges@gmail.com>
+//!
+//! # Example
+//!
+//! +--------------+
+//! |FOLDERS|THREAD|
+//! |       +------+
+//! |       |MAIL  |
+//! |       |      |
+//! +-------+------+
+//! |STATUS        |
+//! +--------------+
+//!
+//! The Screen object is the curses interface, and the View objects are the
+//! windows. Layout should be completely customizable.
+//!
+//! Typical session: <Tab> to highlight View, then <Space> to fullscreen View
+//! <Enter> to select an item 'open folder/email/expand thread'
+//! <hjkl/arrows> to move between items
 
 extern crate ncurses;
 use self::ncurses::*;
-
-/*
-
-Example screen layout:
-+--------------+
-|FOLDERS|THREAD|
-|       +------+
-|       |MAIL  |
-|       |      |
-+-------+------+
-|STATUS        |
-+--------------+
-
-The Screen object is the curses interface, and the View objects are the
-windows. Layout should be completely customizable.
-
-Typical session: <Tab> to highlight View, then <Space> to fullscreen View
-<Enter> to select an item 'open folder/email/expand thread'
-<hjkl/arrows> to move between items
-
-*/
 
 struct Item {
     text: String,
@@ -190,11 +185,18 @@ impl Screen {
             /* get input */
             match ch
             {
-                KEY_TAB => { self.index = (self.index + 1) % self.views.len(); },
-                KEY_H | KEY_LEFT => { self.index = if self.index > 0 { (self.index - 1) % self.views.len() } else { 0 }; },
+                KEY_TAB => {
+                    self.index = (self.index + 1) % self.views.len();
+                },
+                KEY_H | KEY_LEFT => { self.index = if self.index > 0 {
+                    (self.index - 1) % self.views.len() } else { 0 };
+                },
                 KEY_J | KEY_DOWN => { self.views[self.index].down(); },
                 KEY_K | KEY_UP => { self.views[self.index].up(); },
-                KEY_L | KEY_RIGHT => { self.index = if self.index < self.views.len() - 1 { (self.index + 1) % self.views.len() } else { self.views.len() - 1 }; },
+                KEY_L | KEY_RIGHT => {
+                    self.index = if self.index < self.views.len() - 1 {
+                        (self.index + 1) % self.views.len()
+                    } else { self.views.len() - 1 }; },
                 _ => { },
             }
             &self.update();

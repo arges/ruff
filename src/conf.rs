@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 //! Conf - configuration file loading and parsing
-//! Author: Chris J Arges <christopherarges@gmail.com>
+//!
+//! (C) 2015 Chris J Arges <christopherarges@gmail.com>
 //!
 //! # Examples
 //! ```toml

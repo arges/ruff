@@ -1,7 +1,7 @@
-/*
-  (c) 2015 - Chris J Arges <christopherarges@gmail.com>
-*/
-
+//! Ruff command line e-mail client
+//!
+//! (C) 2015 Chris J Arges <christopherarges@gmail.com>
+//!
 extern crate ncurses;
 
 mod screen;
@@ -15,6 +15,6 @@ fn main() {
     let mut s = Screen::new();
     let c = Conf::new();
 
-    s.event_loop();	/* this should be run a thread */
+    s.event_loop();
     s.cleanup();
 }
