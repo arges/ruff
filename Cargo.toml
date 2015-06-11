@@ -6,3 +6,5 @@ authors = ["Chris J Arges <christopherarges@gmail.com>"]
 [dependencies]
 ncurses = "*"
 toml = "*"
+imap = "*"
+openssl = "*"

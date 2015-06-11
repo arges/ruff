@@ -13,8 +13,11 @@
 //!
 //! [accounts]
 //!   [accounts.default]
-//!     imap_user = "user@host.com"
-//!     smtp_url = ""
+//!     imap_server = "imap.example.com"
+//!     imap_port = "993"
+//!     imap_user = "user@example.com"
+//!     imap_pass = ""
+//!
 //! ```
 
 extern crate toml;
