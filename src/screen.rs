@@ -48,32 +48,37 @@ impl View {
     pub fn new(x: i32, y: i32, width: i32, height: i32) -> View {
         let win = newwin(height, width, y, x);
         box_(win, 0, 0);
-        View { x: x, y: y, width: width, height: height, win: win, focus: false, start: 0, index: 0, items: Vec::new()}
+	View { x: x, y: y, width: width, height: height, win: win,
+               focus: false, start: 0, index: 0, items: Vec::new()
+        }
     }
 
-    /* TODO generalize color drawing code to hook in with conf */
+    /* TODO generalize color drawing code to hook in with Conf */
+    fn get_color(focus: bool, highlight: i16) -> chtype {
+        if focus {
+            ' ' as chtype | COLOR_PAIR(highlight) as chtype | B_BOLD
+        } else {
+            ' ' as chtype | COLOR_PAIR(COLOR_PAIR_DEFAULT) as chtype
+        }
+    }
 
     pub fn redraw(&self) -> () {
         /* draw focus */
-        let mut focus_color = ' ' as chtype | COLOR_PAIR(COLOR_PAIR_DEFAULT) as chtype;
-        if self.focus {
-            focus_color = ' ' as chtype | COLOR_PAIR(COLOR_PAIR_HIGHLIGHT) as chtype | B_BOLD as u64;
-        }
-        wbkgd(self.win, focus_color);
+        wbkgd(self.win, View::get_color(self.focus, COLOR_PAIR_HIGHLIGHT));
 
-        /* TODO make items able to scroll */
-        /* draw items */
-        let mut items_max = self.items.len();
-        if self.items.len() >= (self.height - 2) as usize {
-            items_max = (self.height - 2) as usize;
-        }
-        for i in self.start..items_max {
-            let mut focus_color = ' ' as chtype | COLOR_PAIR(COLOR_PAIR_DEFAULT) as chtype;
-            if self.index == i {
-                focus_color = ' ' as chtype | COLOR_PAIR(COLOR_PAIR_FOCUS) as chtype;
-            }
+        /* determine the total number of items to display */
+        let items_max = if self.items.len() >= (self.height - 2) as usize {
+            (self.height - 2) as usize
+        } else {
+            self.items.len()
+        };
+
+        /* draw each element */
+        for i in self.start..(items_max + self.start) {
+            let focus_color = View::get_color(self.index == i, COLOR_PAIR_FOCUS);
             wattron(self.win, focus_color as i32);
-            mvwprintw(self.win, i as i32 + 1, 1, &self.items[i].text[..]);
+            mvwhline(self.win, i as i32 + 1 - self.start as i32, 1, focus_color as u64, self.width-2);
+            mvwprintw(self.win, i as i32 + 1 - self.start as i32, 1, &self.items[i].text[..]);
             wattroff(self.win, focus_color as i32);
         }
 
@@ -81,16 +86,23 @@ impl View {
         wrefresh(self.win);
     }
 
+    /* FIXME scrolling isn't great */
     pub fn down(&mut self) {
         if self.index < self.items.len()-1 {
             self.index += 1;
         }
+        self.start = if self.index > self.height as usize - 2 - 1 {
+            self.index - (self.height as usize - 2 - 1)
+        } else { 0 };
     }
 
     pub fn up(&mut self) {
         if self.index > 0 {
             self.index -=1;
         }
+        self.start = if self.index > self.height as usize - 2 - 1 {
+            self.index - (self.height as usize - 2 - 1)
+        } else { 0 };
     }
 }
 
@@ -100,6 +112,7 @@ pub struct Screen {
     height: i32,
     index: usize,
     views: Vec<View>,
+    status: String,
 }
 
 /* hack */
@@ -113,6 +126,9 @@ const KEY_TAB:i32 = '\t' as i32;
 static COLOR_PAIR_DEFAULT: i16 = 1;
 static COLOR_PAIR_HIGHLIGHT: i16 = 2;
 static COLOR_PAIR_FOCUS: i16 = 3;
+
+/* strings */
+static INITIAL_STATUS: &'static str = "ruff email - F1 to exit; TAB to cycle Views, hjkl/arrow keys to navigate Items";
 
 /* TODO error handling for ncurses */
 impl Screen {
@@ -142,7 +158,7 @@ impl Screen {
         let mut threads = View::new(width/4 - 1, 1, 3*(width/4) - 1, height - 2);
         threads.focus = true;
 
-        /* demo items */
+        /* FIXME: insert demo items */
         for i in 1..50 {
             let folder_string = format!("Folder {}", i);
             folders.items.push(Item{text: folder_string.to_string()});
@@ -153,11 +169,15 @@ impl Screen {
 	views.push(folders);
 	views.push(threads);
 
-	/* setup status */
-        mvprintw(height-1,0, "ruff email - F1 to exit; TAB to cycle Views, hjkl/arrow keys to navigate Items");
-
         /* return screen object with default view highlighted */
-        Screen { width: width, height: height, index: 0, views: views}
+        Screen { width: width, height: height, index: 0, views: views, status: INITIAL_STATUS.to_string() }
+    }
+
+    pub fn resize(&mut self) {
+        /* get screen boundaries */
+        getmaxyx(stdscr, &mut self.height, &mut self.width);
+
+        /* resize all views */
     }
 
     pub fn update(&mut self) -> () {
@@ -173,10 +193,14 @@ impl Screen {
         for view in &self.views {
             view.redraw();
         }
+
+        /* print status */
+        mvprintw(self.height-1,0, &self.status[..]);
         refresh();
     }
 
     pub fn event_loop(&mut self) -> () {
+        &self.update();
         &self.redraw();
         let mut ch = getch();
 
@@ -197,6 +221,9 @@ impl Screen {
                     self.index = if self.index < self.views.len() - 1 {
                         (self.index + 1) % self.views.len()
                     } else { self.views.len() - 1 }; },
+                KEY_RESIZE => {
+                    self.resize();
+                }
                 _ => { },
             }
             &self.update();
