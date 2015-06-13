@@ -78,7 +78,7 @@ impl View {
             let focus_color = View::get_color(self.index == i, COLOR_PAIR_FOCUS);
             wattron(self.win, focus_color as i32);
             mvwhline(self.win, i as i32 + 1 - self.start as i32, 1, focus_color as u64, self.width-2);
-            mvwprintw(self.win, i as i32 + 1 - self.start as i32, 1, &self.items[i].text[..]);
+            mvwprintw(self.win, i as i32 + 1 - self.start as i32, 1, &self.items[i].text);
             wattroff(self.win, focus_color as i32);
         }
 
@@ -195,7 +195,7 @@ impl Screen {
         }
 
         /* print status */
-        mvprintw(self.height-1,0, &self.status[..]);
+        mvprintw(self.height-1,0, &self.status);
         refresh();
     }
 
