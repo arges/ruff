@@ -76,7 +76,7 @@ impl Conf {
     }
 
     /// Lookup key from Conf object
-    pub fn lookup<'a>(&'a self, key: &'a str) -> &toml::Value {
-        self.conf.lookup(key).unwrap()
+    pub fn get<'a>(&'a self, path: &'a str) -> &toml::Value {
+        self.conf.lookup(path).unwrap()
     }
 }
